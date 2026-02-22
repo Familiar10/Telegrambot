@@ -1,0 +1,55 @@
+========================================
+🤖 TEST & CERTIFICATE BOT
+O'RNATISH QO'LLANMASI
+========================================
+
+TEZKOR BOSHLASH:
+===============
+
+1. PYTHON O'RNATISH
+   - Python 3.8+ kerak
+   - https://python.org dan yuklab oling
+
+2. FAYLLARNI OCHISH
+   - ZIP faylni oching
+   - Terminal/CMD da papkaga kiring:
+     cd test_bot
+
+3. .ENV FAYLINI SOZLASH
+   Windows:
+     copy .env.example .env
+     notepad .env
+   
+   Linux/Mac:
+     cp .env.example .env
+     nano .env
+   
+   Kerakli ma'lumotlar:
+   - BOT_TOKEN: @BotFather dan
+   - CHANNEL_USERNAME: @yourhannel
+   - ADMIN_IDS: @userinfobot dan
+
+4. KUTUBXONALARNI O'RNATISH
+   pip install -r requirements.txt
+
+5. ISHGA TUSHIRISH
+   Windows:
+     python bot.py
+     yoki start.bat ni ikki marta bosing
+   
+   Linux/Mac:
+     python3 bot.py
+     yoki ./start.sh
+
+========================================
+YORDAM
+========================================
+
+Qo'shimcha ma'lumot: README.md faylini o'qing
+
+Muammo bo'lsa:
+1. logs/bot.log ni tekshiring
+2. python config.py ni ishga tushiring
+3. GitHub issues ga yozing
+
+Muvaffaqiyatlar! 🚀

@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Bot maxfiy ma'lumotlar
+.env
+bot.db
+*.db
+
+# Yaratilgan fayllar
+certificates/*.png
+certificates/*.jpg
+!certificates/.gitkeep
+
+# Loglar
+logs/*.log
+!logs/.gitkeep
+
+# Backuplar
+backups/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Excel
+*.xlsx
+!statistics.xlsx
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
