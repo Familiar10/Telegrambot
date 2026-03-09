@@ -132,7 +132,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message = (
             "👋 Xush kelibsiz!\n\n"
             "📝 Sertifikat olish uchun to'liq <b>ism va familiyangizni</b> kiriting:\n\n"
-            "Namuna: <code>Rahmatjon Ergashev</code>"
+            "Namuna: <code>Rahmatjon Boltaboyev</code>"
         )
         await update.message.reply_text(message, parse_mode='HTML')
         return WAITING_NAME
