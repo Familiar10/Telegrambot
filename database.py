@@ -223,7 +223,7 @@ class Database:
         cursor = conn.cursor()
         cursor.execute('''
             SELECT test_id, correct_answers, wrong_answers, 
-                   score_percentage, submitted_at, certificate_issued
+                   score_percentage, submitted_at, certificate_issued, wrong_questions
             FROM test_results
             WHERE user_id = ?
             ORDER BY submitted_at DESC
@@ -239,7 +239,8 @@ class Database:
                 'wrong': row[2],
                 'percentage': row[3],
                 'date': row[4],
-                'certificate': row[5]
+                'certificate': row[5],
+                'wrong_questions': row[6]
             })
         return results
         

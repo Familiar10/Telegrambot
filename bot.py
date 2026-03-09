@@ -197,9 +197,17 @@ async def myresults_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     for i, result in enumerate(results[:10], 1):  # Faqat so'ngi 10 ta
         cert_icon = "🏆" if result['certificate'] else "📝"
+        wrong_q_list = []
+        if result.get('wrong_questions'):
+            try:
+                import json
+                wrong_q_list = json.loads(result['wrong_questions'])
+            except:
+                pass
+        wrong_q_text = f" | ❌ Savollar: {', '.join(map(str, wrong_q_list))}" if wrong_q_list else ""
         message += (
             f"{cert_icon} <b>Test {result['test_id']}</b>\n"
-            f"   ✅ {result['correct']} | ❌ {result['wrong']} | 📈 {result['percentage']}%\n"
+            f"   ✅ {result['correct']} | ❌ {result['wrong']} | 📈 {result['percentage']}%{wrong_q_text}\n"
             f"   📅 {result['date'][:10]}\n\n"
         )
     
