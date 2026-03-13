@@ -352,18 +352,45 @@ async def handle_test_submission(update: Update, context: ContextTypes.DEFAULT_T
         return
         
     # Vaqtni tekshirish
+    current_time = datetime.now()
+    start_time = None
+    
     if test_key.get('start_time'):
-        current_time = datetime.now()
-        start_time = datetime.strptime(test_key['start_time'], "%Y-%m-%d %H:%M:%S.%f") if isinstance(test_key['start_time'], str) else test_key['start_time']
-        
-        # Agar start_time string bo'lsa va format boshqacha bo'lsa
-        if isinstance(test_key['start_time'], str) and len(test_key['start_time']) < 19:
-             try:
-                 start_time = datetime.strptime(test_key['start_time'], "%Y-%m-%d %H:%M:%S")
-             except:
-                 pass
-        
-        if current_time < start_time:
+        start_time_raw = test_key['start_time']
+        if isinstance(start_time_raw, datetime):
+            start_time = start_time_raw
+        elif isinstance(start_time_raw, str):
+            # Bir nechta formatni urinib ko'rish
+            formats_to_try = [
+                "%Y-%m-%d %H:%M:%S.%f",
+                "%Y-%m-%d %H:%M:%S",
+                "%Y-%m-%d %H:%M",
+            ]
+            for fmt in formats_to_try:
+                try:
+                    start_time = datetime.strptime(start_time_raw, fmt)
+                    break
+                except ValueError:
+                    continue
+            
+            if start_time is None:
+                logger.error(f"start_time formatini parse qilib bo'lmadi: {start_time_raw}")
+                # Parse bo'lmasa davom ettiramiz (xatosiz o'tkazib yuboramiz)
+    
+    # Agar start_time o'rnatilmagan bo'lsa, created_at ni start_time deb faraz qilamiz
+    if start_time is None and test_key.get('created_at'):
+        created_at_raw = test_key['created_at']
+        if isinstance(created_at_raw, datetime):
+            start_time = created_at_raw
+        elif isinstance(created_at_raw, str):
+            try:
+                # Odatda SQLite CURRENT_TIMESTAMP "YYYY-MM-DD HH:MM:SS" shaklida bo'ladi
+                start_time = datetime.strptime(created_at_raw.split('.')[0], "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                pass
+
+    if start_time is not None:
+        if test_key.get('start_time') and current_time < start_time:
             await update.message.reply_text(
                 f"❌ <b>Test hali boshlanmadi!</b>\n\n"
                 f"🕒 Boshlanish vaqti: {start_time.strftime('%Y-%m-%d %H:%M')}",
@@ -371,8 +398,23 @@ async def handle_test_submission(update: Update, context: ContextTypes.DEFAULT_T
             )
             return
 
-        if test_key.get('duration_minutes') and test_key['duration_minutes'] > 0:
-            end_time = start_time + timedelta(minutes=test_key['duration_minutes'])
+        duration_mins = test_key.get('duration_minutes', 0)
+        
+        # Agar duration_minutes 0 bo'lsa, lekin duration matnli bo'lsa (eski testlar uchun fallback)
+        if not duration_mins and test_key.get('duration'):
+            duration_text = str(test_key.get('duration')).lower()
+            match = re.search(r'(\d+)', duration_text)
+            if match:
+                num = int(match.group(1))
+                if 'soat' in duration_text:
+                    duration_mins = num * 60
+                elif 'kun' in duration_text:
+                    duration_mins = num * 24 * 60
+                else:
+                    duration_mins = num
+                    
+        if duration_mins and int(duration_mins) > 0:
+            end_time = start_time + timedelta(minutes=int(duration_mins))
             if current_time > end_time:
                 await update.message.reply_text(
                     f"❌ <b>Test vaqti tugadi!</b>\n\n"
@@ -575,7 +617,18 @@ async def receive_duration(update: Update, context: ContextTypes.DEFAULT_TYPE):
             duration_minutes = int(text)
             duration_text = f"{text} daqiqa"
         else:
-            # Matnli duration (eski format)
+            # Matnli duration (eski format - son ham qidirish)
+            match = re.search(r'(\d+)', text)
+            if match:
+                num = int(match.group(1))
+                if 'soat' in text:
+                    duration_minutes = num * 60
+                elif 'kun' in text:
+                    duration_minutes = num * 24 * 60
+                else:
+                    duration_minutes = num
+                start_time = datetime.now()
+            
             duration_text = text
             
     except Exception as e:
