@@ -603,8 +603,13 @@ async def receive_test_answers(update: Update, context: ContextTypes.DEFAULT_TYP
     
     await update.message.reply_text(
         f"✅ {len(answers)} ta savol qabul qilindi!\n\n"
-        "⏳ <b>Test davomiyligi (yoki muddati)ni kiriting:</b>\n"
-        "Namuna: <code>2 soat</code> yoki <code>15-martgacha</code>"
+        "⏳ <b>Test vaqtini kiriting:</b>\n\n"
+        "📌 Formatlar:\n"
+        "• <code>14:30 | 30</code> — bugun 14:30 da boshlanadi, 30 daqiqa\n"
+        "• <code>30</code> — hozirdan boshlab 30 daqiqa\n"
+        "• <code>30 minut</code> yoki <code>2 soat</code> — hozirdan boshlab\n"
+        "• <code>2026-03-15 14:30 | 60</code> — aniq sana va vaqt",
+        parse_mode='HTML'
     )
     return WAITING_DURATION
 
@@ -628,13 +633,30 @@ async def receive_duration(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if start_str.lower() == 'hozir':
                 start_time = datetime.now()
             else:
-                try:
-                    start_time = datetime.strptime(start_str, "%Y-%m-%d %H:%M")
-                except ValueError:
+                # Formatlash urinishlari: to'liq sana, yoki faqat HH:MM
+                parsed = False
+                for fmt in ["%Y-%m-%d %H:%M", "%d.%m.%Y %H:%M"]:
+                    try:
+                        start_time = datetime.strptime(start_str, fmt)
+                        parsed = True
+                        break
+                    except ValueError:
+                        pass
+                if not parsed:
+                    # Faqat HH:MM bo'lsa bugungi sanani olish
+                    try:
+                        t = datetime.strptime(start_str, "%H:%M")
+                        start_time = datetime.now().replace(
+                            hour=t.hour, minute=t.minute, second=0, microsecond=0
+                        )
+                        parsed = True
+                    except ValueError:
+                        pass
+                if not parsed:
                     await update.message.reply_text(
-                        "❌ Sana formati noto'g'ri!\n"
-                        "To'g'ri format: YYYY-MM-DD HH:MM (Masalan: 2026-03-15 14:30)\n"
-                        "Yoki 'hozir' deb yozing."
+                        "❌ Vaqt formati noto'g'ri!\n"
+                        "Namuna: <code>14:30 | 30</code> yoki <code>2026-03-15 14:30 | 60</code>",
+                        parse_mode='HTML'
                     )
                     return WAITING_DURATION
             
