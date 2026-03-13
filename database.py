@@ -341,8 +341,63 @@ class Database:
             })
         return tests
     
+    def get_test_rank(self, user_id: int, test_id: str) -> Dict:
+        """Foydalanuvchining berilgan testdagi o'rnini aniqlash.
+        Bir xil ball bo'lsa - tezroq topshirgan yuqori o'rinda."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT user_id, score_percentage, submitted_at
+            FROM test_results
+            WHERE test_id = ?
+            ORDER BY score_percentage DESC, submitted_at ASC
+        ''', (test_id,))
+        rows = cursor.fetchall()
+        conn.close()
+
+        rank = 0
+        total = len(rows)
+        for i, row in enumerate(rows, 1):
+            if row[0] == user_id:
+                rank = i
+                break
+        return {'rank': rank, 'total': total}
+
+    def export_test_results(self, test_id: str) -> str:
+        """Bitta testning natijalarini Excel (xlsx) shaklida chiqarish.
+        Tartiblash: ball DESC, vaqt ASC. O'rin ustuni ham qo'shiladi."""
+        conn = self.get_connection()
+        query = '''
+            SELECT
+                u.full_name   AS "Ism-Familiya",
+                u.username    AS "Username",
+                tr.correct_answers     AS "To'g'ri",
+                tr.wrong_answers       AS "Xato",
+                tr.score_percentage    AS "Ball (%)",
+                CASE WHEN tr.certificate_issued = 1 THEN 'Ha' ELSE "Yo'q" END AS "Sertifikat",
+                tr.submitted_at        AS "Topshirilgan vaqt"
+            FROM test_results tr
+            JOIN users u ON tr.user_id = u.user_id
+            WHERE tr.test_id = ?
+            ORDER BY tr.score_percentage DESC, tr.submitted_at ASC
+        '''
+        df = pd.read_sql(query, conn, params=(test_id,))
+        conn.close()
+
+        # O'rin ustunini qo'shish
+        df.insert(0, "O'rin", range(1, len(df) + 1))
+
+        excel_path = f'test_{test_id}_results.xlsx'
+        with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name=f'Test {test_id}')
+            worksheet = writer.sheets[f'Test {test_id}']
+            for column in worksheet.columns:
+                max_length = max((len(str(cell.value or '')) for cell in column), default=0)
+                worksheet.column_dimensions[column[0].column_letter].width = min(max_length + 3, 50)
+        return excel_path
+
     # ========== STATISTIKA ==========
-    
+
     # ========== SETTINGS FUNKSIYALARI ==========
     
     def set_setting(self, key: str, value: str):

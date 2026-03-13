@@ -508,6 +508,38 @@ async def handle_test_submission(update: Update, context: ContextTypes.DEFAULT_T
         message += "😔 <i>Minimal chegara 70%. Qaytadan urinib ko'ring!</i>"
         await update.message.reply_text(message, parse_mode='HTML')
 
+    # ── Adminga avtomatik Excel yuborish ──────────────────────────
+    try:
+        rank_data = db.get_test_rank(user_id, test_id)
+        excel_path = db.export_test_results(test_id)
+        user_data = db.get_user(user_id)
+        user_name = user_data['full_name'] if user_data else str(user_id)
+
+        excel_caption = (
+            f"📊 <b>Test {test_id} — yangilangan natijalar</b>\n\n"
+            f"👤 Oxirgi topshirgan: <b>{user_name}</b>\n"
+            f"📈 Ball: <b>{result['percentage']}%</b>\n"
+            f"👥 Jami qatnashchilar: <b>{rank_data['total']}</b> ta"
+        )
+
+        for admin_id in ADMIN_IDS:
+            try:
+                with open(excel_path, 'rb') as f:
+                    await context.bot.send_document(
+                        chat_id=admin_id,
+                        document=f,
+                        filename=f"test_{test_id}_natijalar.xlsx",
+                        caption=excel_caption,
+                        parse_mode='HTML'
+                    )
+            except Exception as e:
+                logger.error(f"Admin {admin_id} ga Excel yuborishda xatolik: {e}")
+
+        if os.path.exists(excel_path):
+            os.remove(excel_path)
+    except Exception as e:
+        logger.error(f"Avtomatik Excel yaratishda xatolik: {e}")
+
 # ============================================
 # ADMIN: YANGI TEST QO'SHISH
 # ============================================
