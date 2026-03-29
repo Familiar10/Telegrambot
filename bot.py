@@ -10,6 +10,7 @@
 import re
 import os
 import logging
+import pytz
 from datetime import datetime, timedelta
 from typing import Optional
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -44,6 +45,10 @@ WAITING_NAME, WAITING_TEST_ID, WAITING_ANSWERS, WAITING_DURATION, WAITING_TEMPLA
 # ============================================
 # YORDAMCHI FUNKSIYALAR
 # ============================================
+
+def get_now() -> datetime:
+    """Returns the current naive time in UTC+5 (Tashkent)"""
+    return datetime.now(pytz.timezone('Asia/Tashkent')).replace(tzinfo=None)
 
 async def check_subscription(user_id: int, context: ContextTypes.DEFAULT_TYPE) -> bool:
     """
@@ -352,7 +357,7 @@ async def handle_test_submission(update: Update, context: ContextTypes.DEFAULT_T
         return
         
     # Vaqtni tekshirish
-    current_time = datetime.now()
+    current_time = get_now()
     start_time = None
     
     if test_key.get('start_time'):
@@ -631,7 +636,7 @@ async def receive_duration(update: Update, context: ContextTypes.DEFAULT_TYPE):
             minutes_str = parts[1].strip()
             
             if start_str.lower() == 'hozir':
-                start_time = datetime.now()
+                start_time = get_now()
             else:
                 # Formatlash urinishlari: to'liq sana, yoki faqat HH:MM
                 parsed = False
@@ -646,7 +651,7 @@ async def receive_duration(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     # Faqat HH:MM bo'lsa bugungi sanani olish
                     try:
                         t = datetime.strptime(start_str, "%H:%M")
-                        start_time = datetime.now().replace(
+                        start_time = get_now().replace(
                             hour=t.hour, minute=t.minute, second=0, microsecond=0
                         )
                         parsed = True
@@ -667,7 +672,7 @@ async def receive_duration(update: Update, context: ContextTypes.DEFAULT_TYPE):
                  return WAITING_DURATION
                  
         elif text.isdigit():
-            start_time = datetime.now()
+            start_time = get_now()
             duration_minutes = int(text)
             duration_text = f"{text} daqiqa"
         else:
@@ -681,7 +686,7 @@ async def receive_duration(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     duration_minutes = num * 24 * 60
                 else:
                     duration_minutes = num
-                start_time = datetime.now()
+                start_time = get_now()
             
             duration_text = text
             
